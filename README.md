@@ -2,6 +2,8 @@
 
 > React Native integration of Braintree Drop-in for IOS & ANDROID (Apple Pay, Google Pay, Paypal, Venmo, Credit Card)
 
+> NOTE: updated to BraintreeDropIn v9.6.+
+
 <p align="center">
 <img src="https://raw.githubusercontent.com/wgltony/react-native-braintree-dropin-ui/master/node_modules/iphone.png" width="250">
 <img src="https://raw.githubusercontent.com/wgltony/react-native-braintree-dropin-ui/master/node_modules/android.png" width="250">
@@ -320,7 +322,7 @@ Unsafe implementation of the HostnameVerifier interface - vulnerability ( https:
 [3]:  https://github.com/braintree/braintree-android-drop-in
 [4]:  https://developers.braintreepayments.com/guides/client-sdk/setup/android/v2#browser-switch-setup
 [5]:  ./index.js.flow
-[6]:  https://developers.braintreepayments.com/guides/apple-pay/configuration/ios/v4
+[6]:  https://developers.braintreepayments.com/guides/apple-pay/configuration/ios/v5
 [7]:  https://articles.braintreepayments.com/guides/payment-methods/apple-pay#compatibility
 [8]:  https://developers.braintreepayments.com/guides/apple-pay/overview
 [9]:  https://developers.braintreepayments.com/guides/google-pay/overview
