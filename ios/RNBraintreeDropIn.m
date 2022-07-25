@@ -12,22 +12,14 @@ RCT_EXPORT_MODULE(RNBraintreeDropIn)
 
 RCT_EXPORT_METHOD(show:(NSDictionary*)options resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
 {
-
-    if([options[@"darkTheme"] boolValue]){
-        if (@available(iOS 13.0, *)) {
-            BTUIKAppearance.sharedInstance.colorScheme = BTUIKColorSchemeDynamic;
-        } else {
-            BTUIKAppearance.sharedInstance.colorScheme = BTUIKColorSchemeDark;
-        }
-    } else {
-        BTUIKAppearance.sharedInstance.colorScheme = BTUIKColorSchemeLight;
-    }
+    BTDropInRequest *request = [[BTDropInRequest alloc] init];
+    BTDropInUICustomization *uiCustomization = [[BTDropInUICustomization alloc] initWithColorScheme:BTDropInColorSchemeDynamic];
 
     if(options[@"fontFamily"]){
-        [BTUIKAppearance sharedInstance].fontFamily = options[@"fontFamily"];
+        uiCustomization.fontFamily = options[@"fontFamily"];
     }
     if(options[@"boldFontFamily"]){
-        [BTUIKAppearance sharedInstance].boldFontFamily = options[@"boldFontFamily"];
+        uiCustomization.boldFontFamily = options[@"boldFontFamily"];
     }
 
     self.resolve = resolve;
@@ -40,8 +32,6 @@ RCT_EXPORT_METHOD(show:(NSDictionary*)options resolver:(RCTPromiseResolveBlock)r
         return;
     }
 
-    BTDropInRequest *request = [[BTDropInRequest alloc] init];
-
     NSDictionary* threeDSecureOptions = options[@"threeDSecure"];
     if (threeDSecureOptions) {
         NSNumber* threeDSecureAmount = threeDSecureOptions[@"amount"];
@@ -50,8 +40,8 @@ RCT_EXPORT_METHOD(show:(NSDictionary*)options resolver:(RCTPromiseResolveBlock)r
             return;
         }
 
-        request.threeDSecureVerification = YES;
         BTThreeDSecureRequest *threeDSecureRequest = [[BTThreeDSecureRequest alloc] init];
+        threeDSecureRequest.threeDSecureRequestDelegate = self;
         threeDSecureRequest.amount = [NSDecimalNumber decimalNumberWithString:threeDSecureAmount.stringValue];
         request.threeDSecureRequest = threeDSecureRequest;
 
@@ -59,7 +49,7 @@ RCT_EXPORT_METHOD(show:(NSDictionary*)options resolver:(RCTPromiseResolveBlock)r
 
     BTAPIClient *apiClient = [[BTAPIClient alloc] initWithAuthorization:clientToken];
     self.dataCollector = [[BTDataCollector alloc] initWithAPIClient:apiClient];
-    [self.dataCollector collectCardFraudData:^(NSString * _Nonnull deviceDataCollector) {
+    [self.dataCollector collectDeviceData:^(NSString * _Nonnull deviceDataCollector) {
         // Save deviceData
         self.deviceDataCollector = deviceDataCollector;
     }];
@@ -108,13 +98,13 @@ RCT_EXPORT_METHOD(show:(NSDictionary*)options resolver:(RCTPromiseResolveBlock)r
     BTDropInController *dropIn = [[BTDropInController alloc] initWithAuthorization:clientToken request:request handler:^(BTDropInController * _Nonnull controller, BTDropInResult * _Nullable result, NSError * _Nullable error) {
             [self.reactRoot dismissViewControllerAnimated:YES completion:nil];
 
-            //result.paymentOptionType == .ApplePay
-            //NSLog(@"paymentOptionType = %ld", result.paymentOptionType);
+            //result.paymentMethodType == .ApplePay
+            //NSLog(@"paymentMethodType = %ld", result.paymentMethodType);
 
             if (error != nil) {
                 reject(error.localizedDescription, error.localizedDescription, error);
-            } else if (result.cancelled) {
-                reject(@"USER_CANCELLATION", @"The user cancelled", nil);
+            } else if (result.canceled) {
+                reject(@"USER_CANCELLATION", @"The user canceled", nil);
             } else {
                 if (threeDSecureOptions && [result.paymentMethod isKindOfClass:[BTCardNonce class]]) {
                     BTCardNonce *cardNonce = (BTCardNonce *)result.paymentMethod;
@@ -125,7 +115,7 @@ RCT_EXPORT_METHOD(show:(NSDictionary*)options resolver:(RCTPromiseResolveBlock)r
                     } else{
                         [[self class] resolvePayment:result deviceData:self.deviceDataCollector resolver:resolve];
                     }
-                } else if(result.paymentMethod == nil && (result.paymentOptionType == 16 || result.paymentOptionType == 18)){ //Apple Pay
+                } else if(result.paymentMethod == nil && (result.paymentMethodType == 16 || result.paymentMethodType == 18)){ //Apple Pay
                     // UIViewController *ctrl = [[[[UIApplication sharedApplication] delegate] window] rootViewController];
                     // [ctrl presentViewController:self.viewController animated:YES completion:nil];
                     UIViewController *rootViewController = RCTPresentedViewController();
@@ -185,7 +175,7 @@ RCT_EXPORT_METHOD(show:(NSDictionary*)options resolver:(RCTPromiseResolveBlock)r
 - (void)paymentAuthorizationViewControllerDidFinish:(PKPaymentAuthorizationViewController *)controller{
     [self.reactRoot dismissViewControllerAnimated:YES completion:nil];
     if(self.applePayAuthorized == NO){
-        self.reject(@"USER_CANCELLATION", @"The user cancelled", nil);
+        self.reject(@"USER_CANCELLATION", @"The user canceled", nil);
     }
 }
 
